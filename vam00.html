@@ -1,0 +1,671 @@
+
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مدیریت وام و بدهی من</title>
+<style>
+*{box-sizing:border-box}
+body{
+  font-family:Tahoma,Arial,sans-serif;
+  background:#f2f5f9;
+  color:#243247;
+  margin:0;
+  padding:12px;
+  line-height:1.9
+}
+header{
+  background:#176b87;
+  color:white;
+  padding:18px 12px;
+  border-radius:14px;
+  text-align:center
+}
+header h2{margin:0}
+nav{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:8px;
+  margin:12px 0
+}
+button{
+  border:0;
+  border-radius:9px;
+  padding:11px;
+  font-family:inherit;
+  font-size:14px;
+  cursor:pointer;
+  background:#176b87;
+  color:white
+}
+nav button{background:#e0edf2;color:#174c60}
+nav button.active{background:#176b87;color:white}
+.page{
+  display:none;
+  background:white;
+  border-radius:12px;
+  padding:14px;
+  margin-bottom:12px
+}
+.page.active{display:block}
+h3{color:#176b87;margin-top:0}
+label{display:block;margin-top:10px;font-size:14px}
+input,select,textarea{
+  width:100%;
+  padding:10px;
+  margin-top:4px;
+  border:1px solid #ccd5df;
+  border-radius:8px;
+  font-family:inherit;
+  font-size:14px;
+  background:white
+}
+.primary{background:#176b87;width:100%;margin-top:14px}
+.danger{background:#b83232}
+.cards{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:9px
+}
+.card{
+  background:#eef6f8;
+  padding:12px;
+  border-radius:10px;
+  text-align:center;
+  overflow-wrap:anywhere
+}
+.amount{font-size:18px;font-weight:bold;color:#176b87}
+.small{font-size:12px;color:#637386}
+.item{
+  border:1px solid #dce4eb;
+  border-radius:10px;
+  padding:12px;
+  margin:10px 0;
+  overflow-wrap:anywhere
+}
+.item button{margin:4px 0}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{border:1px solid #d7e0e8;padding:7px;text-align:center}
+th{background:#e8f1f5}
+.tablewrap{overflow-x:auto}
+.notice{
+  background:#fff4d7;
+  padding:10px;
+  border-radius:8px;
+  margin:10px 0
+}
+.hidden{display:none!important}
+footer{text-align:center;color:#718096;font-size:12px;padding:12px}
+</style>
+</head>
+<body>
+
+<header>
+<h2>مدیریت وام و بدهی من</h2>
+<div id="today"></div>
+</header>
+
+<nav>
+<button class="active" onclick="showPage('home',this)">🏠 صفحه اصلی</button>
+<button onclick="showPage('add',this)">➕ ثبت مورد جدید</button>
+<button onclick="showPage('list',this)">📋 فهرست وام‌ها</button>
+<button onclick="showPage('reports',this)">📊 گزارش‌ها</button>
+<button onclick="showPage('backup',this)">💾 پشتیبان اطلاعات</button>
+<button onclick="showPage('help',this)">❓ راهنما</button>
+</nav>
+
+<section id="home" class="page active">
+<h3>خلاصه وضعیت مالی</h3>
+<div id="reminders"></div>
+<div class="cards">
+<div class="card">
+<div>مجموع بدهی باقی‌مانده</div>
+<div class="amount" id="totalDebt">۰</div>
+</div>
+<div class="card">
+<div>مجموع طلب باقی‌مانده</div>
+<div class="amount" id="totalReceivable">۰</div>
+</div>
+<div class="card">
+<div>تعداد پرونده‌ها</div>
+<div class="amount" id="totalRecords">۰</div>
+</div>
+<div class="card">
+<div>اقساط سررسیدشده</div>
+<div class="amount" id="dueCount">۰</div>
+</div>
+</div>
+<p class="small">مبالغ به تومان نمایش داده می‌شوند.</p>
+</section>
+
+<section id="add" class="page">
+<h3 id="formTitle">ثبت وام، بدهی یا طلب جدید</h3>
+<form id="recordForm">
+<input type="hidden" id="recordId">
+
+<label>نوع پرونده</label>
+<select id="kind" required>
+<option value="loan">وام دریافتی</option>
+<option value="debt">بدهی شخصی</option>
+<option value="receivable">طلب از دیگران</option>
+<option value="loanGiven">وام پرداختی به دیگران</option>
+</select>
+
+<label>عنوان یا نام شخص</label>
+<input id="title" required placeholder="مثلاً وام بانک یا نام شخص">
+
+<label>مبلغ کل (تومان)</label>
+<input id="amount" type="number" min="1" required>
+
+<label>مبلغ پرداخت‌شده تا امروز (تومان)</label>
+<input id="paid" type="number" min="0" value="0" required>
+
+<label>تاریخ شروع</label>
+<input id="startDate" type="date">
+
+<label>تاریخ سررسید بعدی</label>
+<input id="dueDate" type="date">
+
+<label>مبلغ هر قسط (تومان)</label>
+<input id="installment" type="number" min="0" value="0">
+
+<label>فاصله اقساط</label>
+<select id="period">
+<option value="monthly">ماهانه</option>
+<option value="weekly">هفتگی</option>
+<option value="none">بدون قسط منظم</option>
+</select>
+
+<label>توضیحات</label>
+<textarea id="notes" rows="3" placeholder="توضیحات تکمیلی"></textarea>
+
+<button class="primary" type="submit">ذخیره اطلاعات</button>
+<button type="button" onclick="resetForm()" style="background:#64748b;width:100%;margin-top:8px">پاک کردن فرم</button>
+</form>
+</section>
+
+<section id="list" class="page">
+<h3>فهرست پرونده‌های مالی</h3>
+<label>جست‌وجو</label>
+<input id="search" placeholder="نام، عنوان یا نوع پرونده..." oninput="renderList()">
+<div id="recordList"></div>
+</section>
+
+<section id="reports" class="page">
+<h3>گزارش‌های مالی</h3>
+<div id="reportSummary"></div>
+<div class="tablewrap">
+<table>
+<thead>
+<tr>
+<th>نوع</th>
+<th>عنوان</th>
+<th>مبلغ کل</th>
+<th>پرداخت‌شده</th>
+<th>مانده</th>
+<th>سررسید</th>
+</tr>
+</thead>
+<tbody id="reportTable"></tbody>
+</table>
+</div>
+<button class="primary" onclick="window.print()">چاپ گزارش / ذخیره PDF</button>
+<button class="primary" onclick="exportCSV()">خروجی جدولی قابل بازشدن در Excel</button>
+</section>
+
+<section id="backup" class="page">
+<h3>پشتیبان‌گیری و بازیابی</h3>
+<p>برای نگهداری اطلاعات، نسخه پشتیبان متنی بسازید و آن را کپی کنید.</p>
+<button class="primary" onclick="makeBackup()">ساخت نسخه پشتیبان</button>
+<label>متن نسخه پشتیبان</label>
+<textarea id="backupText" rows="8" placeholder="نسخه پشتیبان اینجا نمایش داده می‌شود"></textarea>
+<button class="primary" onclick="copyBackup()">کپی نسخه پشتیبان</button>
+<hr>
+<p>برای بازیابی اطلاعات، متن نسخه پشتیبان قبلی را در کادر زیر قرار دهید.</p>
+<textarea id="restoreText" rows="6" placeholder="متن پشتیبان قبلی را اینجا بچسبانید"></textarea>
+<button class="primary" onclick="restoreBackup()">بازیابی اطلاعات</button>
+</section>
+
+<section id="help" class="page">
+<h3>راهنمای استفاده</h3>
+<p>۱. از قسمت «ثبت مورد جدید» وام، بدهی یا طلب را ثبت کنید.</p>
+<p>۲. در فهرست پرونده‌ها، مانده هر مورد و امکان ثبت پرداخت را می‌بینید.</p>
+<p>۳. در گزارش‌ها می‌توانید جدول مالی را مشاهده و چاپ کنید.</p>
+<p>۴. برای جلوگیری از ازدست‌رفتن اطلاعات، مرتب نسخه پشتیبان بسازید.</p>
+<div class="notice">توجه: اطلاعات در حافظه مرورگر همین گوشی ذخیره می‌شود. پاک‌کردن داده‌های مرورگر یا تغییر محیط اجرا ممکن است اطلاعات را حذف کند.</div>
+</section>
+
+<footer>مدیریت وام و بدهی من ـ نسخه آزمایشی</footer>
+
+<script>
+  
+const STORAGE_KEY = "vam_bedehi_v1";
+let records = [];
+let payments = [];
+
+function loadData() {
+  try {
+    records = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    payments = JSON.parse(localStorage.getItem(STORAGE_KEY + "_payments") || "[]");
+  } catch (e) {
+    records = [];
+    payments = [];
+  }
+}
+
+function saveData() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+  localStorage.setItem(STORAGE_KEY + "_payments", JSON.stringify(payments));
+}
+
+function money(value) {
+  return Number(value || 0).toLocaleString("fa-IR");
+}
+
+function todayISO() {
+  const d = new Date();
+  return d.getFullYear() + "-" +
+    String(d.getMonth() + 1).padStart(2, "0") + "-" +
+    String(d.getDate()).padStart(2, "0");
+}
+
+function jalaliDate(dateValue) {
+  if (!dateValue) return "ثبت نشده";
+  const d = new Date(dateValue + "T12:00:00");
+  if (isNaN(d.getTime())) return dateValue;
+  return new Intl.DateTimeFormat("fa-IR-u-ca-persian", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(d);
+}
+
+function remaining(record) {
+  const totalPaid = payments
+    .filter(p => p.recordId === record.id)
+    .reduce((sum, p) => sum + Number(p.amount || 0), 0);
+
+  return Math.max(
+    0,
+    Number(record.amount || 0) -
+    Number(record.paid || 0) -
+    totalPaid
+  );
+}
+
+function typeName(kind) {
+  const names = {
+    loan: "وام دریافتی",
+    debt: "بدهی شخصی",
+    receivable: "طلب از دیگران",
+    loanGiven: "وام پرداختی به دیگران"
+  };
+  return names[kind] || "سایر";
+}
+
+function showPage(id, button) {
+  document.querySelectorAll(".page").forEach(page => {
+    page.classList.remove("active");
+  });
+
+  const target = document.getElementById(id);
+  if (target) target.classList.add("active");
+
+  document.querySelectorAll("nav button").forEach(btn => {
+    btn.classList.remove("active");
+  });
+
+  if (button) button.classList.add("active");
+
+  refreshAll();
+}
+
+function resetForm() {
+  document.getElementById("recordForm").reset();
+  document.getElementById("recordId").value = "";
+  document.getElementById("paid").value = "0";
+  document.getElementById("installment").value = "0";
+  document.getElementById("formTitle").textContent =
+    "ثبت وام، بدهی یا طلب جدید";
+}
+
+document.getElementById("recordForm").addEventListener("submit", function(e) {
+  e.preventDefault();
+
+  const id = document.getElementById("recordId").value;
+  const amount = Number(document.getElementById("amount").value);
+  const paid = Number(document.getElementById("paid").value);
+
+  if (amount <= 0 || paid < 0 || paid > amount) {
+    alert("لطفاً مبلغ کل و پرداخت‌شده را بررسی کنید.");
+    return;
+  }
+
+  const old = records.find(r => r.id === id);
+
+  const record = {
+    id: id || String(Date.now()),
+    kind: document.getElementById("kind").value,
+    title: document.getElementById("title").value.trim(),
+    amount: amount,
+    paid: paid,
+    startDate: document.getElementById("startDate").value,
+    dueDate: document.getElementById("dueDate").value,
+    installment: Number(document.getElementById("installment").value || 0),
+    period: document.getElementById("period").value,
+    notes: document.getElementById("notes").value.trim()
+  };
+
+  if (!record.title) {
+    alert("لطفاً عنوان یا نام شخص را وارد کنید.");
+    return;
+  }
+
+  if (old) {
+    records = records.map(r => r.id === id ? record : r);
+  } else {
+    records.push(record);
+  }
+
+  saveData();
+  resetForm();
+  refreshAll();
+
+  alert("اطلاعات با موفقیت ذخیره شد.");
+  showPage("list", document.querySelectorAll("nav button")[2]);
+});
+
+function editRecord(id) {
+  const r = records.find(item => item.id === id);
+  if (!r) return;
+
+  document.getElementById("recordId").value = r.id;
+  document.getElementById("kind").value = r.kind;
+  document.getElementById("title").value = r.title;
+  document.getElementById("amount").value = r.amount;
+  document.getElementById("paid").value = r.paid;
+  document.getElementById("startDate").value = r.startDate || "";
+  document.getElementById("dueDate").value = r.dueDate || "";
+  document.getElementById("installment").value = r.installment || 0;
+  document.getElementById("period").value = r.period || "monthly";
+  document.getElementById("notes").value = r.notes || "";
+  document.getElementById("formTitle").textContent = "ویرایش پرونده";
+
+  showPage("add", document.querySelectorAll("nav button")[1]);
+}
+
+function deleteRecord(id) {
+  if (!confirm("آیا از حذف این پرونده و پرداخت‌های ثبت‌شده آن مطمئن هستید؟")) return;
+
+  records = records.filter(r => r.id !== id);
+  payments = payments.filter(p => p.recordId !== id);
+
+  saveData();
+  refreshAll();
+}
+
+function addPayment(id) {
+  const r = records.find(item => item.id === id);
+  if (!r) return;
+
+  const balance = remaining(r);
+  if (balance <= 0) {
+    alert("این پرونده تسویه شده است.");
+    return;
+  }
+
+  const value = prompt(
+    "مبلغ پرداخت جدید به تومان را وارد کنید.\nمانده فعلی: " + money(balance)
+  );
+
+  if (value === null) return;
+
+  const amount = Number(value);
+  if (!Number.isFinite(amount) || amount <= 0 || amount > balance) {
+    alert("مبلغ واردشده معتبر نیست یا از مانده بیشتر است.");
+    return;
+  }
+
+  const date = prompt(
+    "تاریخ پرداخت به شکل میلادی وارد شود (مثلاً 2026-10-25):",
+    todayISO()
+  );
+
+  if (date === null) return;
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) ||
+      isNaN(new Date(date + "T12:00:00").getTime())) {
+    alert("تاریخ معتبر نیست.");
+    return;
+  }
+
+  payments.push({
+    id: String(Date.now()),
+    recordId: id,
+    amount: amount,
+    date: date
+  });
+
+  saveData();
+  refreshAll();
+  alert("پرداخت ثبت شد.");
+}
+
+function renderList() {
+  const box = document.getElementById("recordList");
+  const search = (document.getElementById("search").value || "").trim().toLowerCase();
+
+  const filtered = records.filter(r =>
+    (r.title || "").toLowerCase().includes(search) ||
+    typeName(r.kind).toLowerCase().includes(search)
+  );
+
+  if (!filtered.length) {
+    box.innerHTML = "<p>هنوز پرونده‌ای ثبت نشده است.</p>";
+    return;
+  }
+
+  box.innerHTML = filtered.map(r => {
+    const balance = remaining(r);
+    const overdue = r.dueDate &&
+      r.dueDate < todayISO() && balance > 0;
+
+    return `
+      <div class="item">
+        <strong>${escapeHTML(r.title)}</strong>
+        <div class="small">${typeName(r.kind)}</div>
+        <p>مبلغ کل: <b>${money(r.amount)}</b> تومان</p>
+        <p>پرداخت اولیه: ${money(r.paid)} تومان</p>
+        <p>پرداخت‌های ثبت‌شده: ${money(
+          payments.filter(p => p.recordId === r.id)
+            .reduce((s,p) => s + Number(p.amount), 0)
+        )} تومان</p>
+        <p>مانده: <b>${money(balance)}</b> تومان</p>
+        <p>سررسید بعدی: ${jalaliDate(r.dueDate)}</p>
+        ${overdue ? '<div class="notice">سررسید گذشته است</div>' : ""}
+        <button onclick="addPayment('${r.id}')">ثبت پرداخت</button>
+        <button onclick="editRecord('${r.id}')">ویرایش</button>
+        <button class="danger" onclick="deleteRecord('${r.id}')">حذف</button>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderHome() {
+  const debtKinds = ["loan", "debt"];
+  const receivableKinds = ["receivable", "loanGiven"];
+
+  const debt = records
+    .filter(r => debtKinds.includes(r.kind))
+    .reduce((s, r) => s + remaining(r), 0);
+
+  const receivable = records
+    .filter(r => receivableKinds.includes(r.kind))
+    .reduce((s, r) => s + remaining(r), 0);
+
+  document.getElementById("totalDebt").textContent = money(debt);
+  document.getElementById("totalReceivable").textContent = money(receivable);
+  document.getElementById("totalRecords").textContent = money(records.length);
+
+  const due = records.filter(r =>
+    r.dueDate && r.dueDate <= todayISO() && remaining(r) > 0
+  );
+
+  document.getElementById("dueCount").textContent = money(due.length);
+
+  document.getElementById("reminders").innerHTML = due.length
+    ? '<div class="notice">توجه: ' + money(due.length) +
+      ' پرونده دارای سررسید امروز یا گذشته است.</div>'
+    : "";
+}
+
+function renderReports() {
+  const body = document.getElementById("reportTable");
+
+  body.innerHTML = records.map(r => `
+    <tr>
+      <td>${typeName(r.kind)}</td>
+      <td>${escapeHTML(r.title)}</td>
+      <td>${money(r.amount)}</td>
+      <td>${money(Number(r.paid || 0) +
+        payments.filter(p => p.recordId === r.id)
+          .reduce((s,p) => s + Number(p.amount), 0))}</td>
+      <td>${money(remaining(r))}</td>
+      <td>${jalaliDate(r.dueDate)}</td>
+    </tr>
+  `).join("");
+
+  document.getElementById("reportSummary").innerHTML =
+    "<p>تعداد پرونده‌ها: <b>" + money(records.length) +
+    "</b></p><p>تعداد پرداخت‌های ثبت‌شده: <b>" +
+    money(payments.length) + "</b></p>";
+}
+
+function escapeHTML(value) {
+  return String(value || "").replace(/[&<>"']/g, ch => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[ch]);
+}
+
+function refreshAll() {
+  renderHome();
+  renderList();
+  renderReports();
+}
+
+function exportCSV() {
+  const rows = [
+    ["نوع", "عنوان", "مبلغ کل", "پرداخت اولیه", "پرداخت‌های ثبت‌شده", "مانده", "سررسید"]
+  ];
+
+  records.forEach(r => {
+    const paidByHistory = payments
+      .filter(p => p.recordId === r.id)
+      .reduce((s,p) => s + Number(p.amount), 0);
+
+    rows.push([
+      typeName(r.kind),
+      r.title,
+      r.amount,
+      r.paid,
+      paidByHistory,
+      remaining(r),
+      r.dueDate || ""
+    ]);
+  });
+
+  const csv = "\uFEFF" + rows.map(row =>
+    row.map(value => '"' + String(value).replace(/"/g, '""') + '"').join(",")
+  ).join("\r\n");
+
+  const blob = new Blob([csv], {type: "text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "gozaresh_vam_bedehi.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function makeBackup() {
+  const data = {
+    version: 1,
+    createdAt: new Date().toISOString(),
+    records: records,
+    payments: payments
+  };
+
+  document.getElementById("backupText").value =
+    JSON.stringify(data, null, 2);
+}
+
+function copyBackup() {
+  const box = document.getElementById("backupText");
+  if (!box.value) makeBackup();
+  box.select();
+
+  try {
+    const ok = document.execCommand("copy");
+    alert(ok
+      ? "متن نسخه پشتیبان کپی شد."
+      : "متن را انتخاب کنید و از گزینه کپی گوشی استفاده کنید.");
+  } catch (e) {
+    alert("متن را انتخاب کنید و از گزینه کپی گوشی استفاده کنید.");
+  }
+}
+
+function restoreBackup() {
+  const text = document.getElementById("restoreText").value.trim();
+  if (!text) {
+    alert("ابتدا متن نسخه پشتیبان را وارد کنید.");
+    return;
+  }
+
+  if (!confirm("اطلاعات فعلی با اطلاعات نسخه پشتیبان جایگزین می‌شود. ادامه می‌دهید؟")) return;
+
+  try {
+    const data = JSON.parse(text);
+    if (!Array.isArray(data.records) || !Array.isArray(data.payments)) {
+      throw new Error("ساختار نامعتبر");
+    }
+
+    records = data.records;
+    payments = data.payments;
+    saveData();
+    refreshAll();
+    alert("بازیابی اطلاعات انجام شد.");
+  } catch (e) {
+    alert("متن نسخه پشتیبان معتبر نیست.");
+  }
+}
+
+function initApp() {
+  loadData();
+
+  document.getElementById("today").textContent =
+    "امروز: " + jalaliDate(todayISO());
+
+  refreshAll();
+}
+
+initApp();
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+  
